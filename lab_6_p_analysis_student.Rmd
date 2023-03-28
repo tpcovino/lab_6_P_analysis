@@ -1,0 +1,238 @@
+---
+title: "P frequency analysis"
+author: "YOUR NAME HERE"
+date: "2023-03-26"
+output: html_document
+---
+
+# ENSC 445 / LRES 545 --- Lab 06 Part II (15 pts)
+
+## Precipitation Analysis
+In this lab we will work with 40+ years of daily precipitation data from a SNOTEL station called Canyon SNOTEL , which is near the Corwin Springs gage.  We will look at precipitation data (both rain and SWE) and do precipitation frequency analysiss, and address a few particular questions: 
+
+**How big was the June 2022 rain event?**
+
+**How big was the 2022 water year peak SWE?**
+
+**Was the June rain event as extreme as the flow event? We, and the USGS, have estimated that the 2022 Yellowstone flood event exceeded the 500-year flow at Corwin Springs gage.**
+
+**Interpret and explain your results for the P analysis and the flood analysis in the context of the Antecedent Precipitation Index (API). Which is an index that describes how wet a watershed is at any given time.** 
+
+See here for background on API:
+<https://tonyladson.wordpress.com/tag/antecedent-precipitation-index/#:~:text=The%20Antecedent%20Precipitation%20Index%20(API,than%20rain%20from%20previous%20days.>
+
+We will use a new package you will need to install: snotelr. Please install the package by clicking on "Packages" in the lower right panel and then "Install". Type snotelr into the window that pops up. You can also use install.packages().
+```{r setup, include=FALSE}
+# change echo and eval to FALSE to suppress code and code output
+# individual chunks have their own set of rules
+
+library(tidyverse)
+library(lubridate)
+library(snotelr)
+library(leaflet)
+library(zoo)
+library(patchwork)
+
+```
+
+First, we will download data from the SNOTEL Canyoon 384 site see here:
+
+<https://wcc.sc.egov.usda.gov/nwcc/site?sitenum=384>
+
+```{r}
+# download Canyon snotel site 384 using the correct site id
+dat <- as_tibble(snotel_download(site_id = c(384), internal = TRUE)) %>% 
+  # this converts the date string into a date object
+  mutate(date = ymd(date)) %>% 
+  # this removes the dates prior to TODAY
+  filter(date > as_date("1980-10-01") & date < as_date("2022-09-30")) %>% 
+  # this adds a column that contains the water year
+  mutate(wtr_yr = if_else(lubridate::month(date) > 9, lubridate::year(date) + 1, lubridate::year(date))) %>% 
+  select(description, site_id, date, wtr_yr, swe = snow_water_equivalent, p = precipitation, p_cum = precipitation_cumulative, temp_max = temperature_max, temp_min = temperature_min, temp_mean = temperature_mean)
+```
+
+Whenever you download some data or load a df it is best practice to visualize the data (make a plot) to see what the data look like, if there are any gaps, weird/interesting outliers, trends, etc. So - make a plot of the precipitation data in the "dat" data frame. You should also plot the other variables. SWE and temperature values. Can you make a plotting function where you just change the name of the variable and the function produces a new graph?
+
+Also can you make a quick bar plot of monthly average P?
+
+```{r}
+
+```
+
+It is also good to have a look and see where the site is. We can do that using leaflet and the snotel_info() function. Run snotel_info() and see what it returns by looking at the snotel_sites data frame. 
+```{r}
+snotel_sites <- snotel_info()
+```
+
+That is useful. It gives us information on all of the snotel sites. So if we wanted to do analysis on lots of snotel sites we could use this function to get info on the sites and then we could filter for State, or elevation, or whatever. 
+
+For this project we are just going to look at one snotel. Site 384. Filter the snotel_sites df to only include site 384 and plot its location on a map. 
+
+```{r}
+site <- snotel_sites %>% 
+  filter(site_id == 384)
+
+snotel_map <- leaflet() %>% 
+  addProviderTiles("OpenStreetMap") %>% 
+  addAwesomeMarkers(data = site, lat = ~latitude, lng = ~longitude, label = ~site_id, 
+                    popup = ~paste("Elevation:", elev)) 
+  
+snotel_map
+
+```
+
+Now lets have a look at the water year 2022 data. Filter and plot the WY-2022 P and SWE data. 
+```{r}
+
+```
+
+Then have a look at the data for only June of 2022. 
+```{r}
+
+```
+
+Now that we have done some data exploration, let's start the frequency analysis. For the P analysis we could look at daily sums, 7-day sums, and so on. There are many different decisions we could make. We could also only look at rain events in May and June. Or exclude any P that fell as snow.
+
+For this analysis let's do two things. Let's first have a look at June rain events. When we look at the June rain events we could find the max P for June each year and do frequency analyis. Or we could say let's look at any P amounts that are above some threshold. 
+
+If we choose to look at the maximum P, this is called the annual maximum series. On the other hand we could look at any 24-hour P values that are above some threshold. This is called the partial duration series. In our flood analysis last week we used the annual maximum series, but we also could have used a partial duration series. Here, let's stick with the annual maximum series, but we will take the max of June events.
+
+Another decision is whether we use a rolling value, like we did in the low-flow analysis or just use daily values, like we did with the flood analysis. 
+
+
+In your data exploration you probably noticed that the precipitation that caused the 2022 flood happened over a handful of days, so the 5-day rolling sum seems like an appropriate selection.
+
+So - in the first step we are going to: 
+- Step 1: keep only the June data
+- Step 2: compute a 5-day rolling mean of the P data
+- Step 3: select the annual max of the 5-day rolling mean
+
+Step 1 - make a data frame called june_dat that only has June dates.
+```{r}
+
+```
+
+
+Step 2 - now that you have the june_dat data frame. Create a column with a rolling sum. In our low flow analysis we used a rolling mean, but here we will use a rolling sum. We want to know how much rain fell over 5-day periods. 
+
+```{r}
+# Here is the code we used in the low-flow lab. How would you change this to calculate the rolling 5-day sum instead of the 7-day mean? Create a column called p_sum that has the rolling 5-day sums of p.
+# Xday <- 7
+# Qdat <- Qdat %>% 
+#   mutate(xdaymean = rollmean(Flow, 
+#                              Xday, 
+#                              fill = NA, 
+#                              na.rm = F, 
+#                              align = "right"))
+
+
+
+                             
+ 
+```
+
+
+Step 3 - Now lets keep only the annual maximum of the 5-day rolling sums. To do this group by water year and use slice_max(). This will create a new df that you should call an_max.
+
+Be sure to ungroup(). If you don't many functions, including rank(), will not work. 
+```{r}
+june_dat_max <- june_dat %>% 
+  group_by(wtr_yr) %>% 
+  slice_max(p_sum, with_ties = FALSE) %>% 
+  ungroup()
+```
+
+
+Now let's replicate the flood analysis. First, let's fit the Gumbel model to the data and find the theoretical exceedence probability and return interval. 
+
+Here, we will calculate the parameters of the distribution: xbar, sx, alpha, and u. Then fit the model to the data. Refer to the flood portion of this lab for guidance. 
+
+```{r}
+
+xbar <- mean(june_dat_max$p_sum)
+sx <- sd(june_dat_max$p_sum)
+alpha <- (sqrt(6)*sx) / pi
+u <- xbar - (0.5772 * alpha)
+
+```
+
+```{r}
+june_dat_max <- june_dat_max %>% 
+mutate(non_ex_gumb = 
+    exp(-exp(-((p_sum - u) / alpha)))) %>%
+    mutate(ri_gumb = (1 / (1 - non_ex_gumb))) %>% 
+    mutate(ex_gumb = 1 - non_ex_gumb)
+  
+```
+
+Now we have a Gumbel model fit to our June precip data. That model will predict the probability of the P values and the return interval. Make a plot to look at the relationships between the probability values and the P. Put the probability on the Y and the Precipitation on the X. 
+
+```{r}
+
+
+```
+
+Now, we can also use this model to plug some values in. 
+
+We can use this to change the precip_amount and evaluate the probability and return interval. 
+
+What was your precip_amount for June of 2022? What return interval does that produce? 
+
+Keep in mind that we did not include the snowmelt in our analysis. Just the P. The combined rain and snowmelt amounted to 10 to 22 cm of water input. This is 100 to 220 mm of water! 
+
+Determine the return period for the observed rain amount June 2022. Then determine the return period for 100 and 220 mm. 
+
+You will see that the model seems ok for 100 mm but is nonsensical for 200. Why do you think that is happening? 
+
+```{r}
+precip_amount <- 70
+
+precip_non_ex_prob <- 
+    exp(-exp(-((precip_amount - u) / alpha))) #This is the Gumbel equation. Because we have determined the values of u and alpha by fitting the Gumbel distribution to our data, we can use this equation to find the non-exceedence probability of any size June rain event by changing the flood input above. 
+
+# We can then calculate the return interval. 
+precip_ri <- 1/(1 - precip_non_ex_prob)
+
+precip_ri
+```
+
+Part 2 - now lets look at some of the SWE data. 
+
+Step 1 - Make a data frame that has the annual max SWE.
+Step 2 - What is the annual max SWE for 2022?
+Step 3 - What is the long-term average annual max SWE?
+Step 4 - Is the 2022 max-SWE above or below the long-term average max-SWE?
+
+Summary:
+
+Background reading. <https://earthobservatory.nasa.gov/images/150010/catastrophic-flooding-in-yellowstone#:~:text=Between%20June%2010%20and%2013,flowed%20over%20already%20damp%20soils.>
+
+Use this reading and your analysis to answer the following questions. 
+
+1. How much rain did we observed at the Canyon SNOTEL site associated with the June 2022 Yellowstone flood? (1 pt)
+
+2. What was the return interval of that amount of rain? (1 pt)
+
+3. What is the return interval of 100 mm of rain at the Canyon SNOTEL? (1 pt)
+
+4. Was the max-SWE in 2022 above or below the long-term average max-SWE? What was 2022 max-SWE and what was long-term average max-SWE. (2 pts). Also provide a figure of SWE over time. Put SWE on the y-axis and date on the x. Challenge: Can you add the long-term average to this plot as a reference line?   
+```{r}
+
+
+```
+
+5. In June of 2022 there was a large flood that has been estimated as being larger than the 500-year flood (less than 0.2% probability flood). Use your analysis and associated readings to explain how a rain event with fairly small probability (~3%) but not extremely small probability, occuring during a year with below average max SWE, can result in a flood even of extremely low probability (less than 0.2%)? (10 pts) 
+
+See here for background on API:
+<https://tonyladson.wordpress.com/tag/antecedent-precipitation-index/#:~:text=The%20Antecedent%20Precipitation%20Index%20(API,than%20rain%20from%20previous%20days.>
+
+
+
+
+
+
+
+
+
+
+
